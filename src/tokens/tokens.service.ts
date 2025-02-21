@@ -128,12 +128,6 @@ export class TokensService {
           contract_token_address_contractTocontract: {
             select: {
               name: true,
-              contract_contract_addressToaddress: {
-                select: {
-                  symbol: true,
-                  contract_interface: true,
-                },
-              },
             },
           },
           contract_details: {
