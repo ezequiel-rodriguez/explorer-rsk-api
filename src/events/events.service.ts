@@ -120,8 +120,6 @@ export class EventsService {
 
       const formattedData = paginatedEvents.map((e) => {
         e.timestamp = e.timestamp.toString() as unknown as bigint;
-        e.abi = JSON.parse(e.abi);
-        e.args = JSON.parse(e.args);
         const abi = JSON.parse(e.abi);
         let args = JSON.parse(e.args);
         args = abi?.inputs?.map((input, index) => {
