@@ -237,19 +237,21 @@ export class ItxsService {
     try {
       const parsedCursor = cursor ? this.decodeCursor(cursor) : undefined;
 
+      const whereInternalTxId = parsedCursor
+        ? {
+            internalTxId: {
+              [take > 0 ? 'lt' : 'gt']: parsedCursor.internalTxId,
+            },
+          }
+        : {};
+
       const internalTransactions = await this.prisma.address_in_itx.findMany({
         take: take > 0 ? take + 1 : take - 1,
-        cursor: cursor
-          ? {
-              address_internalTxId_role: {
-                address,
-                internalTxId: parsedCursor.internalTxId,
-                role: parsedCursor.role,
-              },
-            }
-          : undefined,
-        where: { address },
-        orderBy: [{ internalTxId: 'desc' }, { role: 'desc' }],
+        where: {
+          address,
+          ...whereInternalTxId,
+        },
+        orderBy: [{ internalTxId: 'desc' }],
         select: {
           address: true,
           internalTxId: true,
@@ -291,12 +293,12 @@ export class ItxsService {
       });
 
       const nextCursor =
-        take > 0 && hasMoreData
-          ? this.encodeCursor(
+        take > 0 && !hasMoreData
+          ? null
+          : this.encodeCursor(
               formattedData[formattedData.length - 1]?.internalTxId,
               formattedData[formattedData.length - 1]?.role,
-            )
-          : null;
+            );
 
       const prevCursor =
         !cursor || (take < 0 && !hasMoreData)
