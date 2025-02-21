@@ -98,7 +98,7 @@ export class ItxsService {
 
       if (transactions.length === 0) {
         return {
-          pagination: { nextCursor: null, prevCursor: null, take },
+          paginationData: { nextCursor: null, prevCursor: null, take },
           data: [],
         };
       }
@@ -142,37 +142,69 @@ export class ItxsService {
     }
   }
 
-  async getIinternalTxsByTxHash(
-    hash: string,
-    page_data: number,
-    take_data: number,
+  async getInternalTransactionsByTransactionHash(
+    transactionHash: string,
+    take: number,
+    cursor: string,
   ) {
-    const where: any = {};
-    if (hash) where.transactionHash = hash;
+    try {
+      const internalTransactions =
+        await this.prisma.internal_transaction.findMany({
+          take: take > 0 ? take + 1 : take - 1,
+          cursor: cursor ? { internalTxId: cursor } : undefined,
+          skip: cursor ? 1 : undefined,
+          where: { transactionHash: transactionHash },
+          orderBy: { internalTxId: 'desc' },
+        });
 
-    const count = await this.prisma.internal_transaction.count({ where });
+      if (internalTransactions.length === 0) {
+        return {
+          paginationData: { nextCursor: null, prevCursor: null, take },
+          data: [],
+        };
+      }
 
-    const pagination = this.pgService.paginate({
-      page_data,
-      take_data,
-      count,
-    });
+      const hasMoreData = internalTransactions.length > Math.abs(take);
 
-    const response = await this.prisma.internal_transaction.findMany({
-      where: {
-        transactionHash: hash,
-      },
-      orderBy: {
-        internalTxId: 'desc',
-      },
-    });
+      const paginatedInternalTransactions = hasMoreData
+        ? take > 0
+          ? internalTransactions.slice(0, Math.abs(take))
+          : internalTransactions.slice(1)
+        : internalTransactions;
 
-    const formatData = this.txParser.formatItxs(response);
+      const formattedData = this.txParser.formatItxs(
+        paginatedInternalTransactions,
+      );
 
-    return {
-      pagination,
-      data: formatData,
-    };
+      const nextCursor =
+        take > 0 && hasMoreData
+          ? paginatedInternalTransactions[
+              paginatedInternalTransactions.length - 1
+            ]?.internalTxId
+          : null;
+
+      const prevCursor =
+        !cursor || (take < 0 && !hasMoreData)
+          ? null
+          : paginatedInternalTransactions[0]?.internalTxId;
+
+      return {
+        paginationData: {
+          nextCursor,
+          prevCursor,
+          take,
+          hasMoreData,
+        },
+        data: formattedData,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error(
+        `Failed to fetch internal transactions: ${error.message}`,
+      );
+    }
   }
 
   async getInternalTxsByAddress(

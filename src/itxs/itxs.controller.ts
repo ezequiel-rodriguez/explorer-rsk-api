@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ItxsService } from './itxs.service';
 import { BlockIdentifierPipe } from 'src/common/pipes/block-identifier.pipe';
 import { PaginationTakeValidationPipe } from 'src/common/pipes/pagination-take.pipe';
+import { TransactionHashValidationPipe } from 'src/common/pipes/transaction-hash.pipe';
 
 @Controller('itxs')
 export class ItxsController {
@@ -13,26 +14,31 @@ export class ItxsController {
     return this.itxsService.getInternalTransactionById(id);
   }
 
-  @Get('/block/:blockOrhash')
+  @Get('/block/:blockOrHash')
   getInternalTransactionsByBlock(
-    @Param('blockOrhash', BlockIdentifierPipe) blockOrhash: string,
+    @Param('blockOrHash', BlockIdentifierPipe) blockOrHash: string,
     @Query('take', PaginationTakeValidationPipe) take: number,
     @Query('cursor') cursor: string,
   ) {
     return this.itxsService.getInternalTransactionsByBlock(
-      blockOrhash,
+      blockOrHash,
       take,
       cursor,
     );
   }
 
-  @Get('/tx/:hash')
-  getIinternalTxsByTxHash(
-    @Query('page_data') page_data: number,
-    @Query('take_data') take_data: number,
-    @Param('hash') hash: string,
+  @Get('/tx/:transactionHash')
+  getInternalTransactionsByTransactionHash(
+    @Param('transactionHash', TransactionHashValidationPipe)
+    transactionHash: string,
+    @Query('take', PaginationTakeValidationPipe) take: number,
+    @Query('cursor') cursor: string,
   ) {
-    return this.itxsService.getIinternalTxsByTxHash(hash, page_data, take_data);
+    return this.itxsService.getInternalTransactionsByTransactionHash(
+      transactionHash,
+      take,
+      cursor,
+    );
   }
 
   @Get('/address/:address')
