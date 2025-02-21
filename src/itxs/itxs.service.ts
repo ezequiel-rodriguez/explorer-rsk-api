@@ -12,6 +12,12 @@ export class ItxsService {
     private txParser: TxParserService,
   ) {}
 
+  /**
+   * Retrieves an internal transaction by its ID.
+   *
+   * @param {string} itxId - The internal transaction ID to fetch.
+   * @returns - The internal transaction details.
+   */
   async getInternalTransactionById(itxId: string) {
     try {
       // add validation pipe
@@ -142,6 +148,14 @@ export class ItxsService {
     }
   }
 
+  /**
+   * Retrieves paginated internal transactions for a given transaction hash.
+   *
+   * @param {string} transactionHash - The transaction hash to fetch transactions from.
+   * @param {number} take - Number of transactions to retrieve. If negative, paginates backward.
+   * @param {number} [cursor] - The ID of the last fetched transaction to enable keyset pagination.
+   * @returns  - Paginated list of internal transactions.
+   */
   async getInternalTransactionsByTransactionHash(
     transactionHash: string,
     take: number,
@@ -207,47 +221,128 @@ export class ItxsService {
     }
   }
 
-  async getInternalTxsByAddress(
+  /**
+   * Retrieves paginated internal transactions for a given address.
+   *
+   * @param address to fetch transactions internal transactions from.
+   * @param {number} take - Number of transactions to retrieve. If negative, paginates backward.
+   * @param {number} [cursor] - The ID of the last fetched transaction to enable keyset pagination.
+   * @returns  - Paginated list of internal transactions.
+   */
+  async getInternalTransactionsByAddress(
     address: string,
-    page_data: number,
-    take_data: number,
+    take: number,
+    cursor?: string,
   ) {
-    const where = {
-      address,
-    };
-    const count = await this.prisma.address_in_itx.count({ where });
+    try {
+      const parsedCursor = cursor ? this.decodeCursor(cursor) : undefined;
 
-    const pagination = this.pgService.paginate({
-      page_data,
-      take_data,
-      count,
-    });
-    const response = await this.prisma.address_in_itx.findMany({
-      take: pagination.take,
-      skip: pagination.skip,
-      where,
-      include: {
-        internal_transaction: true,
-      },
-      orderBy: {
-        internalTxId: 'desc',
-      },
-    });
+      const internalTransactions = await this.prisma.address_in_itx.findMany({
+        take: take > 0 ? take + 1 : take - 1,
+        cursor: cursor
+          ? {
+              address_internalTxId_role: {
+                address,
+                internalTxId: parsedCursor.internalTxId,
+                role: parsedCursor.role,
+              },
+            }
+          : undefined,
+        where: { address },
+        orderBy: [{ internalTxId: 'desc' }, { role: 'desc' }],
+        select: {
+          address: true,
+          internalTxId: true,
+          internal_transaction: {
+            select: {
+              type: true,
+              timestamp: true,
+              action: true,
+              error: true,
+            },
+          },
+          role: true,
+        },
+      });
 
-    const formatData = response.map((tx) => {
-      const { internal_transaction, ...result } = tx;
-      internal_transaction.timestamp =
-        internal_transaction.timestamp.toString() as unknown as bigint;
+      if (internalTransactions.length === 0) {
+        return {
+          paginationData: { nextCursor: null, prevCursor: null, take },
+          data: [],
+        };
+      }
 
-      internal_transaction.action = JSON.parse(internal_transaction.action);
+      const hasMoreData = internalTransactions.length > Math.abs(take);
+
+      const paginatedResults = hasMoreData
+        ? take > 0
+          ? internalTransactions.slice(0, Math.abs(take))
+          : internalTransactions.slice(1)
+        : internalTransactions;
+
+      const formattedData = paginatedResults.map((tx) => {
+        const { internal_transaction, ...rest } = tx;
+        return {
+          ...rest,
+          ...internal_transaction,
+          timestamp: internal_transaction.timestamp.toString(),
+          action: JSON.parse(internal_transaction.action || '{}'),
+        };
+      });
+
+      const nextCursor =
+        take > 0 && hasMoreData
+          ? this.encodeCursor(
+              formattedData[formattedData.length - 1]?.internalTxId,
+              formattedData[formattedData.length - 1]?.role,
+            )
+          : null;
+
+      const prevCursor =
+        !cursor || (take < 0 && !hasMoreData)
+          ? null
+          : this.encodeCursor(
+              formattedData[0]?.internalTxId,
+              formattedData[0]?.role,
+            );
+
       return {
-        ...result,
-        ...internal_transaction,
+        paginationData: {
+          nextCursor,
+          prevCursor,
+          take,
+          hasMoreData,
+        },
+        data: formattedData,
       };
-    });
-    return {
-      pagination,
-      data: formatData,
-    };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error(
+        `Failed to fetch internal transactions: ${error.message}`,
+      );
+    }
   }
+
+  // {address_internalTxId_role: {address: '0x123', internalTxId: 123, role: 'from'}}
+  // {address_internalTxId_role: {address: '0x123', internalTxId: 123, role: 'to'}}
+  // address is parsed from the params
+  // internalTxId is parsed from the cursor
+  // role is parsed from the cursor
+  private encodeCursor = (internalTxId: string, role: string) =>
+    `${internalTxId}_${role}`;
+
+  private decodeCursor = (cursor?: string) => {
+    if (!cursor) return undefined;
+    const parsedCursor = {
+      internalTxId: cursor.split('_')[0],
+      role: cursor.split('_')[1],
+    };
+
+    if (parsedCursor.role !== 'to' && parsedCursor.role !== 'from') {
+      throw new BadRequestException('Invalid cursor role.');
+    }
+    return parsedCursor;
+  };
 }

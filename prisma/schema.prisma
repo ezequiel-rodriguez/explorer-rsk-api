@@ -542,7 +542,7 @@ model address_in_itx {
   address_address_in_itx_addressToaddress address              @relation("address_in_itx_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
   internal_transaction                    internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([address, internalTxId, role])
+  @@id([address, internalTxId, role], map: "address_in_itx_pkey")
   @@index([internalTxId])
 }
 

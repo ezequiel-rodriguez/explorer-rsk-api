@@ -43,14 +43,14 @@ export class ItxsController {
 
   @Get('/address/:address')
   getInternalTxsByAddress(
-    @Query('page_data') page_data: number,
-    @Query('take_data') take_data: number,
     @Param('address') address: string,
+    @Query('take', PaginationTakeValidationPipe) take: number,
+    @Query('cursor') cursor: string,
   ) {
-    return this.itxsService.getInternalTxsByAddress(
+    return this.itxsService.getInternalTransactionsByAddress(
       address,
-      page_data,
-      take_data,
+      take,
+      cursor,
     );
   }
 }
