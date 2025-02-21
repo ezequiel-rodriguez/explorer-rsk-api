@@ -132,7 +132,7 @@ export class AddressesService {
       });
 
       if (!addressData) {
-        return { address: null };
+        return { data: null };
       }
 
       const formattedAddress = this.addressParser.formatAddress(addressData);
