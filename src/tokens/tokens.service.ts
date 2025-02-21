@@ -134,6 +134,7 @@ export class TokensService {
             select: {
               symbol: true,
               decimals: true,
+              contract_interface: true,
             },
           },
         },
@@ -163,6 +164,9 @@ export class TokensService {
           '(Not provided)',
         symbol: token.contract_details?.symbol || '(Not provided)',
         decimals: token.contract_details?.decimals || 18,
+        contract_interface: token.contract_details?.contract_interface.map(
+          (i) => i.interface,
+        ),
       }));
 
       const nextCursor =

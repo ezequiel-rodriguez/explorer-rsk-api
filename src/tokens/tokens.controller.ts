@@ -17,7 +17,7 @@ export class TokensController {
     return this.tokensService.getTokens(take, cursor);
   }
 
-  @Get(':address')
+  @Get('/address/:address')
   getToken(
     @Param('address', AddressValidationPipe) address: string,
     @Query('take', PaginationTakeValidationPipe) take?: number,
