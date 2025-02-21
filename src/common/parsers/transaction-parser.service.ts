@@ -11,7 +11,7 @@ export class TxParserService {
     const response = txs?.map((tx) => {
       tx.timestamp = tx.timestamp.toString() as unknown as bigint;
       tx.value = new BigNumber(tx.value, 16)
-        .dividedBy(1e8)
+        .dividedBy(1e18)
         .toNumber()
         .toString();
       const receipt = JSON.parse(tx.receipt);
