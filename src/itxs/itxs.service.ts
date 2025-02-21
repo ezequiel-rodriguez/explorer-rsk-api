@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import BigNumber from 'bignumber.js';
 import { PaginationService } from 'src/common/pagination/pagination.service';
 import { TxParserService } from 'src/common/parsers/transaction-parser.service';
@@ -44,46 +44,92 @@ export class ItxsService {
     };
   }
 
-  async getInternalTxsByBlock(
-    blockOrhash: number | string,
-    page_data: number,
-    take_data: number,
+  /**
+   * Retrieves paginated internal transactions for a given block number or block hash.
+   *
+   * Uses cursor-based pagination to efficiently fetch transaction data.
+   *
+   * @param {number | string} blockOrHash - The block number or block hash to fetch transactions from.
+   * @param {number} take - Number of transactions to retrieve. If negative, paginates backward.
+   * @param {number} [cursor] - The ID of the last fetched transaction to enable keyset pagination.
+   * @returns  - Paginated list of internal transactions.
+   */
+  async getInternalTransactionsByBlock(
+    blockOrHash: number | string,
+    take: number,
+    cursor?: string,
   ) {
-    const where: any =
-      typeof blockOrhash === 'number'
-        ? { blockNumber: blockOrhash }
-        : { blockHash: blockOrhash };
+    try {
+      if (take < 0 && !cursor) {
+        throw new BadRequestException(
+          'Cannot paginate backward without a cursor.',
+        );
+      }
 
-    const count = await this.prisma.internal_transaction.count({ where });
+      const where =
+        typeof blockOrHash === 'number'
+          ? { blockNumber: blockOrHash }
+          : { blockHash: blockOrHash };
 
-    const pagination = this.pgService.paginate({
-      page_data,
-      take_data,
-      count,
-    });
+      const transactions = await this.prisma.internal_transaction.findMany({
+        take: take > 0 ? take + 1 : take - 1,
+        cursor: cursor ? { internalTxId: cursor } : undefined,
+        skip: cursor ? 1 : undefined,
+        where,
+        select: {
+          type: true,
+          timestamp: true,
+          action: true,
+          internalTxId: true,
+          error: true,
+        },
+        orderBy: { internalTxId: 'desc' },
+      });
 
-    const response = await this.prisma.internal_transaction.findMany({
-      take: pagination.take,
-      skip: pagination.skip,
-      where,
-      select: {
-        type: true,
-        timestamp: true,
-        action: true,
-        internalTxId: true,
-        error: true,
-      },
-      orderBy: {
-        internalTxId: 'desc',
-      },
-    });
+      if (transactions.length === 0) {
+        return {
+          pagination: { nextCursor: null, prevCursor: null, take },
+          data: [],
+        };
+      }
 
-    const formatData = this.txParser.formatItxs(response);
+      const hasMoreData = transactions.length > Math.abs(take);
 
-    return {
-      pagination,
-      data: formatData,
-    };
+      const paginatedTransactions = hasMoreData
+        ? take > 0
+          ? transactions.slice(0, Math.abs(take))
+          : transactions.slice(1)
+        : transactions;
+
+      const formattedData = this.txParser.formatItxs(paginatedTransactions);
+
+      const nextCursor =
+        take > 0 && !hasMoreData
+          ? null
+          : formattedData[formattedData.length - 1]?.internalTxId;
+
+      const prevCursor =
+        !cursor || (take < 0 && !hasMoreData)
+          ? null
+          : formattedData[0]?.internalTxId;
+
+      return {
+        paginationData: {
+          nextCursor,
+          prevCursor,
+          take,
+          hasMoreData,
+        },
+        data: formattedData,
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error(
+        `Failed to fetch internal transactions: ${error.message}`,
+      );
+    }
   }
 
   async getIinternalTxsByTxHash(
