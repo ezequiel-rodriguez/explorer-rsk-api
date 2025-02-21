@@ -8,8 +8,9 @@ export class ItxsController {
   constructor(private itxsService: ItxsService) {}
 
   @Get(':id')
-  getInternalTxById(@Param('id') id: string) {
-    return this.itxsService.getInternalTxById(id);
+  getInternalTransactionById(@Param('id') id: string) {
+    // add txId Validation Pipe
+    return this.itxsService.getInternalTransactionById(id);
   }
 
   @Get('/block/:blockOrhash')

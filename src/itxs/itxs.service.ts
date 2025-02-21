@@ -12,36 +12,46 @@ export class ItxsService {
     private txParser: TxParserService,
   ) {}
 
-  async getInternalTxById(itxId: string) {
-    const itx = await this.prisma.internal_transaction.findFirst({
-      where: {
-        internalTxId: itxId,
-      },
-      orderBy: {
-        internalTxId: 'desc',
-      },
-    });
-    itx.timestamp = itx.timestamp.toString() as unknown as bigint;
-    const result = JSON.parse(itx.result) || {};
-    const action = JSON.parse(itx.action);
+  async getInternalTransactionById(itxId: string) {
+    try {
+      // add validation pipe
+      if (!itxId) {
+        throw new BadRequestException('Internal transaction ID is required.');
+      }
 
-    const gas = new BigNumber(action.gas.toString(), 16).toNumber().toString();
+      const internalTransaction =
+        await this.prisma.internal_transaction.findFirst({
+          where: { internalTxId: itxId },
+          orderBy: { internalTxId: 'desc' },
+        });
 
-    const gasUsed = new BigNumber(result?.gasUsed?.toString() || '0', 16)
-      .toNumber()
-      .toString();
+      if (!internalTransaction) {
+        return { data: [] };
+      }
 
-    action.gas = gas;
-    action.value = new BigNumber(action.value.toString(), 16)
-      .dividedBy(1e18)
-      .toNumber()
-      .toString();
-    result.gasUsed = gasUsed || 0;
-    itx.action = action;
-    itx.result = result;
-    return {
-      data: itx,
-    };
+      internalTransaction.timestamp =
+        internalTransaction.timestamp.toString() as unknown as bigint;
+
+      const result = JSON.parse(internalTransaction.result) || {};
+      const action = JSON.parse(internalTransaction.action) || {};
+
+      action.gas = new BigNumber(action?.gas || '0', 16).toString();
+      action.value = new BigNumber(action?.value || '0', 16)
+        .dividedBy(1e18)
+        .toString();
+      result.gasUsed = new BigNumber(result?.gasUsed || '0', 16).toString();
+
+      return {
+        data: { ...internalTransaction, result, action },
+      };
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error(
+        `Failed to fetch internal transactions: ${error.message}`,
+      );
+    }
   }
 
   /**
