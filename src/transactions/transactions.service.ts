@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import BigNumber from 'bignumber.js';
-import { PaginationService } from 'src/common/pagination/pagination.service';
 import { TxParserService } from 'src/common/parsers/transaction-parser.service';
 import { PrismaService } from 'src/prisma.service';
 
@@ -8,7 +7,6 @@ import { PrismaService } from 'src/prisma.service';
 export class TransactionsService {
   constructor(
     private prisma: PrismaService,
-    private pgService: PaginationService,
     private txParser: TxParserService,
   ) {}
 
