@@ -196,14 +196,14 @@ export class EventsService {
         where.transactionHash = addressOrhash.value;
       }
 
-      let response = await this.findTokensByAddress(where, take, cursor);
+      let response = await this.findTokensTransferEvents(where, take, cursor);
 
       if (response.length === 0 && addressOrhash.type === 'address') {
         where = {
           event: 'Transfer',
           address: addressOrhash.value,
         };
-        response = await this.findTokensByAddress(where, take, cursor);
+        response = await this.findTokensTransferEvents(where, take, cursor);
       }
 
       if (response.length <= 0 || !response) {
@@ -256,7 +256,7 @@ export class EventsService {
     }
   }
 
-  findTokensByAddress(
+  findTokensTransferEvents(
     where: Prisma.eventWhereInput,
     take: number,
     cursor?: string,
