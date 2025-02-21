@@ -28,7 +28,7 @@ export class EventParserService {
     const log = receipt?.logs?.filter((l) => l.eventId === event.eventId);
     receipt.logs = log;
     event.transaction.receipt = receipt;
-    const contrant_detail = {
+    const contract_detail = {
       name: event.address_event_addressToaddress.name,
       symbol:
         event.address_event_addressToaddress.contract_contract_addressToaddress
@@ -37,7 +37,7 @@ export class EventParserService {
     delete event.address_event_addressToaddress;
     return {
       ...event,
-      contrant_detail,
+      contract_detail,
     };
   }
 
@@ -57,7 +57,7 @@ export class EventParserService {
           .dividedBy(new BigNumber(10).pow(18))
           .toNumber();
       }
-      const contrant_detail = {
+      const contract_detail = {
         name: e.address_event_addressToaddress.name,
         symbol:
           e.address_event_addressToaddress.contract_contract_addressToaddress
@@ -70,7 +70,7 @@ export class EventParserService {
       return {
         ...e,
         totalSupply,
-        contrant_detail,
+        contract_detail,
         contract_interface: contract_interface?.map((c) => c.interface),
       };
     });
