@@ -139,6 +139,7 @@ export class TokensService {
             select: {
               symbol: true,
               decimals: true,
+              contract_interface: true,
             },
           },
         },
