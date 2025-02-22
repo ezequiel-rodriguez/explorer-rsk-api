@@ -44,7 +44,6 @@ export class EventsService {
         },
       });
 
-      console.log('response: aqui', response);
       if (!response) {
         return {
           data: null,

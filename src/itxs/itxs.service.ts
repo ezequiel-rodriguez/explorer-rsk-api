@@ -257,8 +257,14 @@ export class ItxsService {
             select: {
               type: true,
               timestamp: true,
+              blockNumber: true,
               action: true,
               error: true,
+              transaction: {
+                select: {
+                  receipt: true,
+                },
+              },
             },
           },
           role: true,
@@ -282,11 +288,20 @@ export class ItxsService {
 
       const formattedData = paginatedResults.map((tx) => {
         const { internal_transaction, ...rest } = tx;
+        const action = JSON.parse(internal_transaction.action || '{}');
+
+        const transaction = internal_transaction.transaction;
+        const transactionReceipt = JSON.parse(transaction.receipt);
+
+        action.to = action.to || transactionReceipt?.contractAddress;
+        action.gas = new BigNumber(action.gas.toString(), 16)
+          .toNumber()
+          .toString();
         return {
           ...rest,
           ...internal_transaction,
           timestamp: internal_transaction.timestamp.toString(),
-          action: JSON.parse(internal_transaction.action || '{}'),
+          action,
         };
       });
 
