@@ -3,6 +3,7 @@ import { ItxsService } from './itxs.service';
 import { BlockIdentifierPipe } from 'src/common/pipes/block-identifier.pipe';
 import { PaginationTakeValidationPipe } from 'src/common/pipes/pagination-take.pipe';
 import { TransactionHashValidationPipe } from 'src/common/pipes/transaction-hash.pipe';
+import { AddressValidationPipe } from 'src/common/pipes/address-validation.pipe';
 
 @Controller('itxs')
 export class ItxsController {
@@ -43,7 +44,7 @@ export class ItxsController {
 
   @Get('/address/:address')
   getInternalTxsByAddress(
-    @Param('address') address: string,
+    @Param('address', AddressValidationPipe) address: string,
     @Query('take', PaginationTakeValidationPipe) take: number,
     @Query('cursor') cursor: string,
   ) {
