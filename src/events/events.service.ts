@@ -43,7 +43,6 @@ export class EventsService {
         },
       });
 
-      console.log('response: aqui', response);
       if (!response) {
         return {
           data: null,
@@ -68,7 +67,11 @@ export class EventsService {
    * @param {string} cursor - The eventID to start from (optional).
    * @returns Paginated events by address data & pagination.
    */
-  async getEventsByAddress(address: string, take: number, cursor?: string) {
+  async getEventsByAddress(
+    address: string,
+    take: number,
+    cursor: { eventId: string },
+  ) {
     try {
       if (take < 0 && !cursor) {
         throw new BadRequestException(
@@ -78,7 +81,7 @@ export class EventsService {
 
       const response = await this.prisma.event.findMany({
         take: take > 0 ? take + 1 : take - 1,
-        cursor: cursor ? { eventId: cursor } : undefined,
+        cursor: cursor ? { eventId: cursor.eventId } : undefined,
         skip: cursor ? 1 : undefined,
         where: {
           address_in_event: {
@@ -98,15 +101,9 @@ export class EventsService {
         },
       });
 
-      if (response.length <= 0) {
+      if (response.length === 0) {
         return {
-          paginationEvents: {
-            nextCursor: null,
-            prevCursor: cursor || null,
-            take,
-            hasMoreData: false,
-          },
-          data: [],
+          data: null,
         };
       }
 
@@ -144,7 +141,7 @@ export class EventsService {
           : formattedData[0]?.eventId;
 
       return {
-        paginationEvents: {
+        paginationData: {
           nextCursor,
           prevCursor,
           take,
@@ -170,7 +167,7 @@ export class EventsService {
   async getTransfersEventByTxHashOrAddress(
     addressOrhash: AddressOrHash,
     take: number,
-    cursor?: string,
+    cursor?: { eventId: string },
   ) {
     try {
       if (take < 0 && !cursor) {
@@ -186,7 +183,7 @@ export class EventsService {
 
       const response = await this.prisma.event.findMany({
         take: take > 0 ? take + 1 : take - 1,
-        cursor: cursor ? { eventId: cursor } : undefined,
+        cursor: cursor ? { eventId: cursor.eventId } : undefined,
         skip: cursor ? 1 : undefined,
         where,
         include: {
@@ -207,15 +204,9 @@ export class EventsService {
         },
       });
 
-      if (response.length <= 0 || !response) {
+      if (response.length === 0) {
         return {
-          paginationEvents: {
-            nextCursor: null,
-            prevCursor: cursor || null,
-            take,
-            hasMoreData: false,
-          },
-          data: [],
+          data: null,
         };
       }
 
@@ -241,7 +232,7 @@ export class EventsService {
           : formattedData[0]?.eventId;
 
       return {
-        paginationEvents: {
+        paginationData: {
           nextCursor,
           prevCursor,
           hasMoreData,

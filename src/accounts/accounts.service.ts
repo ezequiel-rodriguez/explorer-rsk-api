@@ -9,7 +9,7 @@ export class AccountsService {
   async getAccountsByToken(
     tokenAddress: string,
     take: number,
-    cursor?: string,
+    cursor?: { address: string; blockNumber: number },
   ) {
     try {
       if (take < 0 && !cursor) {
@@ -18,14 +18,12 @@ export class AccountsService {
         );
       }
 
-      const parsedCursor = this.decodeCursor(cursor);
-
       const tokensWithDetails = await this.prisma.token_address.findMany({
         take: take > 0 ? take + 1 : take - 1,
         cursor: cursor
           ? {
               address_contract_blockNumber: {
-                ...parsedCursor,
+                ...cursor,
                 contract: tokenAddress,
               },
             }
@@ -51,6 +49,10 @@ export class AccountsService {
         },
         distinct: ['address'],
       });
+
+      if (!tokensWithDetails.length) {
+        return { data: null };
+      }
 
       const hasMoreData = tokensWithDetails.length > Math.abs(take);
 
@@ -107,10 +109,4 @@ export class AccountsService {
 
   encodeCursor = (address: string, blockNumber: number) =>
     `${address}_${blockNumber}`;
-
-  decodeCursor = (cursor?: string) => {
-    if (!cursor) return undefined;
-    const [address, blockNumber] = cursor.split('_');
-    return { address, blockNumber: parseInt(blockNumber, 10) };
-  };
 }

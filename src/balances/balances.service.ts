@@ -17,7 +17,11 @@ export class BalancesService {
    * @param {number} cursor - The block number to start from (optional).
    * @returns Paginated balances data for an address.
    */
-  async getBalanceByAddress(address: string, take: number, cursor?: number) {
+  async getBalanceByAddress(
+    address: string,
+    take: number,
+    cursor?: { id: number },
+  ) {
     try {
       if (take < 0 && !cursor) {
         throw new BadRequestException(
@@ -27,7 +31,7 @@ export class BalancesService {
 
       const response = await this.prisma.balance.findMany({
         take: take > 0 ? take + 1 : take - 1,
-        cursor: cursor ? { id: cursor } : undefined,
+        cursor: cursor ? { id: cursor.id } : undefined,
         skip: cursor ? 1 : undefined,
         where: { address },
         orderBy: { id: 'desc' },
@@ -39,15 +43,9 @@ export class BalancesService {
         },
       });
 
-      if (response.length <= 0) {
+      if (response.length === 0) {
         return {
-          paginationBalances: {
-            nextCursor: null,
-            prevCursor: cursor || null,
-            take,
-            hasMoreData: false,
-          },
-          data: [],
+          data: null,
         };
       }
 
@@ -77,7 +75,7 @@ export class BalancesService {
         !cursor || (take < 0 && !hasMoreData) ? null : formattedData[0]?.id;
 
       return {
-        paginationBalances: {
+        paginationData: {
           nextCursor,
           prevCursor,
           take,
