@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { BlocksService } from './blocks.service';
 import { PaginationTakeValidationPipe } from 'src/common/pipes/pagination-take.pipe';
-import { PaginationCursorValidationPipe } from 'src/common/pipes/pagination-cursor.pipe';
+import { CursorValidationPipe } from 'src/common/pipes/cursor-validation.pipe';
 import { BlockIdentifierPipe } from 'src/common/pipes/block-identifier.pipe';
 
 @Controller('blocks')
@@ -17,7 +17,8 @@ export class BlocksController {
   @Get()
   getBlocks(
     @Query('take', PaginationTakeValidationPipe) take?: number,
-    @Query('cursor', PaginationCursorValidationPipe) cursor?: number,
+    @Query('cursor', new CursorValidationPipe('number'))
+    cursor?: { id: number },
   ) {
     return this.blockService.getBlocks(take, cursor);
   }
