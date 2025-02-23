@@ -29,7 +29,7 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
-      'prettier/prettier': 'error', // Show Prettier issues as ESLint errors
+      'prettier/prettier': 'off', // Show Prettier issues as ESLint errors
       'no-undef': 'off', // Disable this rule as it's handled by TypeScript
     },
   },

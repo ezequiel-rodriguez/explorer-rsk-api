@@ -7,7 +7,6 @@ import {
 import { PrismaService } from 'src/prisma.service';
 import { BlockParserService } from 'src/common/parsers/block-parser.service';
 import { block } from '@prisma/client';
-import { TAKE_PAGE_DATA } from 'src/common/constants';
 
 @Injectable()
 export class BlocksService {
@@ -24,7 +23,7 @@ export class BlocksService {
    * @param {number | null} cursor - The block number to start from (optional).
    * @returns Paginated block data.
    */
-  async getBlocks(take: number = TAKE_PAGE_DATA, cursor?: number) {
+  async getBlocks(take: number, cursor?: { id: number }) {
     try {
       if (take < 0 && !cursor) {
         throw new BadRequestException(
@@ -34,7 +33,7 @@ export class BlocksService {
 
       const blocks = await this.prisma.block.findMany({
         take: take > 0 ? take + 2 : take - 2,
-        cursor: cursor ? { number: cursor } : undefined,
+        cursor: cursor ? { number: cursor.id } : undefined,
         skip: cursor ? (take > 0 ? 1 : 0) : take < 0 ? 1 : undefined,
         orderBy: { number: 'desc' },
         select: {
@@ -53,12 +52,7 @@ export class BlocksService {
 
       if (blocks.length === 0) {
         return {
-          paginationData: {
-            nextCursor: null,
-            prevCursor: cursor || null,
-            take,
-          },
-          data: [],
+          data: null,
         };
       }
 

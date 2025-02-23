@@ -16,7 +16,10 @@ export class TransactionsService {
    * @param {string | null} cursor - The transaction ID to start from (optional).
    * @returns Paginated transactions data.
    */
-  async getTransactions(take: number, cursor?: string) {
+  async getTransactions(
+    take: number,
+    cursor?: { blockNumber: number; transactionIndex: number },
+  ) {
     try {
       if (take < 0 && !cursor) {
         throw new BadRequestException(
@@ -24,15 +27,13 @@ export class TransactionsService {
         );
       }
 
-      const parsedCursor = this.decodeCursor(cursor);
-
       const transactions = await this.prisma.transaction.findMany({
         take: take > 0 ? take + 1 : take - 1,
         cursor: cursor
           ? {
               blockNumber_transactionIndex: {
-                blockNumber: parsedCursor.blockNumber,
-                transactionIndex: parsedCursor.transactionIndex,
+                blockNumber: cursor.blockNumber,
+                transactionIndex: cursor.transactionIndex,
               },
             }
           : undefined,
@@ -54,13 +55,13 @@ export class TransactionsService {
             OR: [
               {
                 blockNumber: {
-                  [take > 0 ? 'lt' : 'gt']: parsedCursor.blockNumber,
+                  [take > 0 ? 'lt' : 'gt']: cursor.blockNumber,
                 },
               },
               {
-                blockNumber: parsedCursor.blockNumber,
+                blockNumber: cursor.blockNumber,
                 transactionIndex: {
-                  [take > 0 ? 'lt' : 'gt']: parsedCursor.transactionIndex,
+                  [take > 0 ? 'lt' : 'gt']: cursor.transactionIndex,
                 },
               },
             ],
@@ -76,8 +77,7 @@ export class TransactionsService {
 
       if (transactions.length === 0) {
         return {
-          pagination: { nextCursor: null, prevCursor: null, take },
-          data: [],
+          data: null,
         };
       }
 
@@ -123,15 +123,6 @@ export class TransactionsService {
 
   encodeCursor = (blockNumber: number, transactionIndex: number) =>
     `${blockNumber}_${transactionIndex}`;
-
-  decodeCursor = (cursor?: string) => {
-    if (!cursor) return undefined;
-    const [blockNumber, transactionIndex] = cursor.split('_');
-    return {
-      blockNumber: parseInt(blockNumber, 10),
-      transactionIndex: parseInt(transactionIndex, 10),
-    };
-  };
 
   async getLast24HoursTransactions() {
     try {
@@ -194,7 +185,7 @@ export class TransactionsService {
   async getTransactionsByBlock(
     blockOrHash: number | string,
     take: number,
-    cursor?: string,
+    cursor?: { blockNumber: number; transactionIndex: number },
   ) {
     try {
       if (take < 0 && !cursor) {
@@ -202,8 +193,6 @@ export class TransactionsService {
           'Cannot paginate backward without a cursor.',
         );
       }
-
-      const parsedCursor = this.decodeCursor(cursor);
 
       const where =
         typeof blockOrHash === 'number'
@@ -215,8 +204,8 @@ export class TransactionsService {
         cursor: cursor
           ? {
               blockNumber_transactionIndex: {
-                blockNumber: parsedCursor.blockNumber,
-                transactionIndex: parsedCursor.transactionIndex,
+                blockNumber: cursor.blockNumber,
+                transactionIndex: cursor.transactionIndex,
               },
             }
           : undefined,
@@ -239,13 +228,13 @@ export class TransactionsService {
             OR: [
               {
                 blockNumber: {
-                  [take > 0 ? 'lt' : 'gt']: parsedCursor.blockNumber,
+                  [take > 0 ? 'lt' : 'gt']: cursor.blockNumber,
                 },
               },
               {
-                blockNumber: parsedCursor.blockNumber,
+                blockNumber: cursor.blockNumber,
                 transactionIndex: {
-                  [take > 0 ? 'lt' : 'gt']: parsedCursor.transactionIndex,
+                  [take > 0 ? 'lt' : 'gt']: cursor.transactionIndex,
                 },
               },
             ],
@@ -256,8 +245,7 @@ export class TransactionsService {
 
       if (transactions.length === 0) {
         return {
-          pagination: { nextCursor: null, prevCursor: null, take },
-          data: [],
+          data: null,
         };
       }
 
@@ -313,7 +301,7 @@ export class TransactionsService {
   async getTransactionsByAddress(
     address: string,
     take: number,
-    cursor?: string,
+    cursor?: { blockNumber: number; transactionIndex: number },
   ) {
     try {
       if (take < 0 && !cursor) {
@@ -322,15 +310,13 @@ export class TransactionsService {
         );
       }
 
-      const parsedCursor = this.decodeCursor(cursor);
-
       const transactions = await this.prisma.transaction.findMany({
         take: take > 0 ? take + 1 : take - 1,
         cursor: cursor
           ? {
               blockNumber_transactionIndex: {
-                blockNumber: parsedCursor.blockNumber,
-                transactionIndex: parsedCursor.transactionIndex,
+                blockNumber: cursor.blockNumber,
+                transactionIndex: cursor.transactionIndex,
               },
             }
           : undefined,
@@ -353,13 +339,13 @@ export class TransactionsService {
             OR: [
               {
                 blockNumber: {
-                  [take > 0 ? 'lt' : 'gt']: parsedCursor.blockNumber,
+                  [take > 0 ? 'lt' : 'gt']: cursor.blockNumber,
                 },
               },
               {
-                blockNumber: parsedCursor.blockNumber,
+                blockNumber: cursor.blockNumber,
                 transactionIndex: {
-                  [take > 0 ? 'lt' : 'gt']: parsedCursor.transactionIndex,
+                  [take > 0 ? 'lt' : 'gt']: cursor.transactionIndex,
                 },
               },
             ],
@@ -370,8 +356,7 @@ export class TransactionsService {
 
       if (transactions.length === 0) {
         return {
-          pagination: { nextCursor: null, prevCursor: null, take },
-          data: [],
+          data: null,
         };
       }
 
@@ -442,7 +427,7 @@ export class TransactionsService {
 
       if (transactions.length === 0) {
         return {
-          data: [],
+          data: null,
         };
       }
 

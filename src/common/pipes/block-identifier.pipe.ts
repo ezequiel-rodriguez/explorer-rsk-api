@@ -1,37 +1,19 @@
 import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
-import { MAX_INT_4_BYTES } from '../constants';
+import { isBlockNumber, isTransactionHash } from '../utils/validation.utils';
 
 @Injectable()
 export class BlockIdentifierPipe implements PipeTransform {
   transform(value: string): number | string {
-    // check if the value is a valid 64-character hexadecimal hash
-    if (/^0x[a-fA-F0-9]{64}$/.test(value)) {
+    if (isTransactionHash(value)) {
       return value;
     }
 
-    // check if it's a numeric string (block number)
-    if (/^\d+$/.test(value)) {
-      const numericValue = parseInt(value, 10);
-      this.validateBlockNumber(numericValue);
-      return numericValue;
+    if (isBlockNumber(value)) {
+      return parseInt(value, 10);
     }
 
     throw new BadRequestException(
       `Invalid block identifier: ${value}. Must be a 64-character hex string or a non-negative integer.`,
     );
-  }
-
-  private validateBlockNumber(block: number) {
-    if (!Number.isInteger(block) || block < 0) {
-      throw new BadRequestException(
-        `Invalid block number: ${block}. Must be a non-negative integer.`,
-      );
-    }
-
-    if (block > MAX_INT_4_BYTES) {
-      throw new BadRequestException(
-        `Block number ${block} exceeds the allowed limit.`,
-      );
-    }
   }
 }

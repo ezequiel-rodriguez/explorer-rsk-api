@@ -94,9 +94,9 @@ export class TokensService {
   }
 
   async getTokensByAddress(
-    tokenAddress: string,
+    address: string,
     take: number,
-    cursor?: string,
+    cursor?: { contract: string; blockNumber: number },
   ) {
     try {
       if (take < 0 && !cursor) {
@@ -105,20 +105,19 @@ export class TokensService {
         );
       }
 
-      const parsedCursor = this.decodeCursor(cursor);
-
       const tokensWithDetails = await this.prisma.token_address.findMany({
         take: take > 0 ? take + 1 : take - 1,
         cursor: cursor
           ? {
               address_contract_blockNumber: {
-                ...parsedCursor,
-                address: tokenAddress,
+                address: address,
+                contract: cursor.contract,
+                blockNumber: cursor.blockNumber,
               },
             }
           : undefined,
         skip: cursor ? 1 : undefined,
-        where: { address: tokenAddress },
+        where: { address: address },
         orderBy: [
           { contract: 'asc' },
           { blockNumber: take > 0 ? 'desc' : 'asc' },
@@ -188,12 +187,6 @@ export class TokensService {
   encodeCursor = (contract: string, blockNumber: number) =>
     `${contract}_${blockNumber}`;
 
-  decodeCursor = (cursor?: string) => {
-    if (!cursor) return undefined;
-    const [contract, blockNumber] = cursor.split('_');
-    return { contract, blockNumber: parseInt(blockNumber, 10) };
-  };
-
   async getTokenByNameOrSymbol(value: string) {
     try {
       let where = {};
@@ -224,10 +217,8 @@ export class TokensService {
       };
 
       if (value.length <= 1) {
-        // search only 1-length symbols
         where = queryBySingleCharSymbol;
       } else {
-        // search by name or symbol
         where = {
           OR: [queryByAddressName, queryByContractSymbol],
         };
@@ -245,6 +236,12 @@ export class TokensService {
           },
         },
       });
+
+      if (!response.length) {
+        return {
+          data: null,
+        };
+      }
 
       const formatData = response.map((t) => {
         return {

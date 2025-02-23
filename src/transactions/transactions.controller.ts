@@ -4,30 +4,17 @@ import { BlockIdentifierPipe } from 'src/common/pipes/block-identifier.pipe';
 import { PaginationTakeValidationPipe } from 'src/common/pipes/pagination-take.pipe';
 import { TransactionHashValidationPipe } from 'src/common/pipes/transaction-hash.pipe';
 import { AddressValidationPipe } from 'src/common/pipes/address-validation.pipe';
+import { CursorValidationPipe } from 'src/common/pipes/cursor-validation.pipe';
 
 @Controller('txs')
 export class TransactionsController {
   constructor(private txsService: TransactionsService) {}
 
-  /**
-   * Fetches a paginated list of transactions using keyset pagination.
-   *
-   * @param {number} take - Number of transactions to retrieve per request.
-   *                        - Positive values paginate forward (newer transactions).
-   *                        - Negative values paginate backward (older transactions).
-   *                        - Default is set in `PaginationTakeValidationPipe`.
-   * @param {string} [cursor] - The pagination cursor in the format `"blockNumber_transactionIndex"`.
-   *                            - Used to determine where to start fetching transactions.
-   *                            - If omitted, fetches the most recent transactions.
-   *
-   * @returns {Promise<{ pagination: { nextCursor: string | null, prevCursor: string | null, take: number }, data: any[] }>}
-   *          - **pagination**: Contains the next and previous cursors for navigation.
-   *          - **data**: The list of transactions matching the pagination criteria.
-   */
   @Get('/')
   getTransactions(
     @Query('take', PaginationTakeValidationPipe) take?: number,
-    @Query('cursor') cursor?: string,
+    @Query('cursor', new CursorValidationPipe('blockNumber_transactionIndex'))
+    cursor?: { blockNumber: number; transactionIndex: number },
   ) {
     return this.txsService.getTransactions(take, cursor);
   }
@@ -40,7 +27,7 @@ export class TransactionsController {
   @Get('/pending')
   getPendingTransactions(
     @Query('take', PaginationTakeValidationPipe) take: number,
-    @Query('cursor') cursor: string,
+    @Query('cursor', TransactionHashValidationPipe) cursor?: string,
   ) {
     return this.txsService.getPendingTransactions(take, cursor);
   }
@@ -62,7 +49,8 @@ export class TransactionsController {
   getTransactionsByBlock(
     @Param('blockOrhash', BlockIdentifierPipe) blockOrhash: string,
     @Query('take', PaginationTakeValidationPipe) take: number,
-    @Query('cursor') cursor: string,
+    @Query('cursor', new CursorValidationPipe('blockNumber_transactionIndex'))
+    cursor: { blockNumber: number; transactionIndex: number },
   ) {
     return this.txsService.getTransactionsByBlock(blockOrhash, take, cursor);
   }
@@ -71,7 +59,8 @@ export class TransactionsController {
   getTransactionsByAddress(
     @Param('address', AddressValidationPipe) address: string,
     @Query('take', PaginationTakeValidationPipe) take: number,
-    @Query('cursor') cursor: string,
+    @Query('cursor', new CursorValidationPipe('blockNumber_transactionIndex'))
+    cursor: { blockNumber: number; transactionIndex: number },
   ) {
     return this.txsService.getTransactionsByAddress(address, take, cursor);
   }
