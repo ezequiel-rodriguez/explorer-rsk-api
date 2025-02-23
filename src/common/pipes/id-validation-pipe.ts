@@ -2,7 +2,9 @@ import { PipeTransform, BadRequestException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class IdValidationPipe implements PipeTransform {
-  constructor(private readonly fieldName: 'eventId' | 'transactionId') {}
+  constructor(
+    private readonly fieldName: 'eventId' | 'transactionId' | 'internalTxId',
+  ) {}
 
   transform(value: string): string {
     if (!value) {

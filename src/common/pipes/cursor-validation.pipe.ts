@@ -9,7 +9,9 @@ export class CursorValidationPipe implements PipeTransform {
       | 'blockNumber_transactionIndex'
       | 'number'
       | 'eventId'
-      | 'transactionId',
+      | 'transactionId'
+      | 'internalTxId'
+      | 'internalTxId_role',
   ) {}
 
   transform(value: string): { [key: string]: string | number } {
@@ -103,7 +105,8 @@ export class CursorValidationPipe implements PipeTransform {
 
     if (
       this.expectedFormat === 'eventId' ||
-      this.expectedFormat === 'transactionId'
+      this.expectedFormat === 'transactionId' ||
+      this.expectedFormat === 'internalTxId'
     ) {
       if (!value) return undefined;
 
@@ -114,6 +117,32 @@ export class CursorValidationPipe implements PipeTransform {
       }
 
       return { [this.expectedFormat]: value.toLowerCase() };
+    }
+
+    if (this.expectedFormat === 'internalTxId_role') {
+      parts = value.split('_');
+      if (parts.length !== 2) {
+        throw new BadRequestException(
+          `Invalid cursor format. Expected format: "internalTxId_role". Received: "${value}".`,
+        );
+      }
+
+      const [internalTxId, role] = parts;
+
+      if (!/^[a-fA-F0-9]{32}$/.test(internalTxId)) {
+        throw new BadRequestException(
+          `Invalid internalTxId format in cursor: ${internalTxId}`,
+        );
+      }
+
+      if (role !== 'to' && role !== 'from') {
+        throw new BadRequestException('Invalid cursor role.');
+      }
+
+      return {
+        internalTxId,
+        role,
+      };
     }
 
     throw new BadRequestException(

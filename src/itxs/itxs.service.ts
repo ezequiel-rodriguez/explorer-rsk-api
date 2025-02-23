@@ -18,7 +18,6 @@ export class ItxsService {
    */
   async getInternalTransactionById(itxId: string) {
     try {
-      // add validation pipe
       if (!itxId) {
         throw new BadRequestException('Internal transaction ID is required.');
       }
@@ -30,7 +29,7 @@ export class ItxsService {
         });
 
       if (!internalTransaction) {
-        return { data: [] };
+        return { data: null };
       }
 
       internalTransaction.timestamp =
@@ -71,7 +70,7 @@ export class ItxsService {
   async getInternalTransactionsByBlock(
     blockOrHash: number | string,
     take: number,
-    cursor?: string,
+    cursor?: { internalTxId: string },
   ) {
     try {
       if (take < 0 && !cursor) {
@@ -87,7 +86,7 @@ export class ItxsService {
 
       const transactions = await this.prisma.internal_transaction.findMany({
         take: take > 0 ? take + 1 : take - 1,
-        cursor: cursor ? { internalTxId: cursor } : undefined,
+        cursor: cursor ? { internalTxId: cursor.internalTxId } : undefined,
         skip: cursor ? 1 : undefined,
         where,
         select: {
@@ -156,13 +155,13 @@ export class ItxsService {
   async getInternalTransactionsByTransactionHash(
     transactionHash: string,
     take: number,
-    cursor: string,
+    cursor: { internalTxId: string },
   ) {
     try {
       const internalTransactions =
         await this.prisma.internal_transaction.findMany({
           take: take > 0 ? take + 1 : take - 1,
-          cursor: cursor ? { internalTxId: cursor } : undefined,
+          cursor: cursor ? { internalTxId: cursor.internalTxId } : undefined,
           skip: cursor ? 1 : undefined,
           where: { transactionHash: transactionHash },
           orderBy: { internalTxId: 'desc' },
@@ -228,15 +227,13 @@ export class ItxsService {
   async getInternalTransactionsByAddress(
     address: string,
     take: number,
-    cursor?: string,
+    cursor?: { internalTxId: string; role: string },
   ) {
     try {
-      const parsedCursor = cursor ? this.decodeCursor(cursor) : undefined;
-
-      const whereInternalTxId = parsedCursor
+      const whereInternalTxId = cursor
         ? {
             internalTxId: {
-              [take > 0 ? 'lt' : 'gt']: parsedCursor.internalTxId,
+              [take > 0 ? 'lt' : 'gt']: cursor.internalTxId,
             },
           }
         : {};
@@ -322,24 +319,6 @@ export class ItxsService {
     }
   }
 
-  // {address_internalTxId_role: {address: '0x123', internalTxId: 123, role: 'from'}}
-  // {address_internalTxId_role: {address: '0x123', internalTxId: 123, role: 'to'}}
-  // address is parsed from the params
-  // internalTxId is parsed from the cursor
-  // role is parsed from the cursor
   private encodeCursor = (internalTxId: string, role: string) =>
     `${internalTxId}_${role}`;
-
-  private decodeCursor = (cursor?: string) => {
-    if (!cursor) return undefined;
-    const parsedCursor = {
-      internalTxId: cursor.split('_')[0],
-      role: cursor.split('_')[1],
-    };
-
-    if (parsedCursor.role !== 'to' && parsedCursor.role !== 'from') {
-      throw new BadRequestException('Invalid cursor role.');
-    }
-    return parsedCursor;
-  };
 }
