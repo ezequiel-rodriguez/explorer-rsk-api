@@ -12,7 +12,8 @@ export class TokensController {
   @Get()
   getTokens(
     @Query('take', PaginationTakeValidationPipe) take?: number,
-    @Query('cursor', new CursorValidationPipe('number')) cursor?: number,
+    @Query('cursor', new CursorValidationPipe('number'))
+    cursor?: { id: number },
   ) {
     return this.tokensService.getTokens(take, cursor);
   }
