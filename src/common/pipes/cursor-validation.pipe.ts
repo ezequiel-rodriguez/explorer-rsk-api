@@ -6,6 +6,7 @@ export class CursorValidationPipe implements PipeTransform {
   constructor(
     private expectedFormat:
       | 'address_blockNumber'
+      | 'contract_blockNumber'
       | 'blockNumber_transactionIndex'
       | 'number'
       | 'eventId'
@@ -54,6 +55,39 @@ export class CursorValidationPipe implements PipeTransform {
       return { address, blockNumber: parsedBlockNumber };
     }
 
+    if (this.expectedFormat === 'contract_blockNumber') {
+      parts = value.split('_');
+
+      if (parts.length !== 2) {
+        throw new BadRequestException(
+          `Invalid cursor format. Expected format: "contract_blockNumber". Received: "${value}".`,
+        );
+      }
+
+      const [contract, blockNumber] = parts;
+
+      if (!/^0x[a-fA-F0-9]{40}$/.test(contract)) {
+        throw new BadRequestException(
+          `Invalid contract format in cursor: ${contract}`,
+        );
+      }
+
+      const parsedBlockNumber = parseInt(blockNumber, 10);
+      if (isNaN(parsedBlockNumber) || parsedBlockNumber < 0) {
+        throw new BadRequestException(
+          `Invalid blockNumber in cursor: ${blockNumber}`,
+        );
+      }
+
+      if (parsedBlockNumber > MAX_INT_4_BYTES) {
+        throw new BadRequestException(
+          `blockNumber in cursor exceeds max allowed value: ${blockNumber}`,
+        );
+      }
+
+      return { contract, blockNumber: parsedBlockNumber };
+    }
+
     if (this.expectedFormat === 'blockNumber_transactionIndex') {
       parts = value.split('_');
       if (parts.length !== 2) {
@@ -97,6 +131,12 @@ export class CursorValidationPipe implements PipeTransform {
       if (numericValue < 0) {
         throw new BadRequestException(
           `"cursor" must be a non-negative integer.`,
+        );
+      }
+
+      if (numericValue > MAX_INT_4_BYTES) {
+        throw new BadRequestException(
+          `blockNumber in cursor exceeds max allowed value: ${numericValue}`,
         );
       }
 
