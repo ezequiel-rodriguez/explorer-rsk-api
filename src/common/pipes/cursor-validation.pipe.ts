@@ -7,7 +7,9 @@ export class CursorValidationPipe implements PipeTransform {
     private expectedFormat:
       | 'address_blockNumber'
       | 'blockNumber_transactionIndex'
-      | 'number',
+      | 'number'
+      | 'eventId'
+      | 'transactionId',
   ) {}
 
   transform(value: string): { [key: string]: string | number } {
@@ -19,8 +21,6 @@ export class CursorValidationPipe implements PipeTransform {
 
     if (this.expectedFormat === 'address_blockNumber') {
       parts = value.split('_');
-
-      console.log(parts);
 
       if (parts.length !== 2) {
         throw new BadRequestException(
@@ -99,6 +99,21 @@ export class CursorValidationPipe implements PipeTransform {
       }
 
       return { id: numericValue };
+    }
+
+    if (
+      this.expectedFormat === 'eventId' ||
+      this.expectedFormat === 'transactionId'
+    ) {
+      if (!value) return undefined;
+
+      if (!/^[a-fA-F0-9]{32}$/.test(value)) {
+        throw new BadRequestException(
+          `Invalid cursor: "${value}" must be a 32-character hexadecimal string.`,
+        );
+      }
+
+      return { [this.expectedFormat]: value.toLowerCase() };
     }
 
     throw new BadRequestException(

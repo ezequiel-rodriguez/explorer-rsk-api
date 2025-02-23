@@ -6,6 +6,8 @@ import {
   AddressOrHash,
   AddressOrHashValidationPipe,
 } from 'src/common/pipes/address-or-hash-validation.pipe';
+import { IdValidationPipe } from 'src/common/pipes/id-validation-pipe';
+import { CursorValidationPipe } from 'src/common/pipes/cursor-validation.pipe';
 
 @Controller('events')
 export class EventsController {
@@ -17,7 +19,7 @@ export class EventsController {
    * @returns Transfer events details, including token deatils and transactions details.
    */
   @Get('/:id')
-  getEventById(@Param('id') id: string) {
+  getEventById(@Param('id', new IdValidationPipe('eventId')) id: string) {
     return this.eventsService.getEventById(id);
   }
 
@@ -32,7 +34,8 @@ export class EventsController {
   getEventsByAddress(
     @Param('address', AddressValidationPipe) address: string,
     @Query('take', PaginationTakeValidationPipe) take?: number,
-    @Query('cursor') cursor?: string,
+    @Query('cursor', new CursorValidationPipe('eventId'))
+    cursor?: { eventId: string },
   ) {
     return this.eventsService.getEventsByAddress(address, take, cursor);
   }
@@ -45,11 +48,12 @@ export class EventsController {
    * @returns Transfer events data details by Tx Hash or address & pagination.
    */
   @Get('/transfer/:addressOrhash')
-  getEventByTxHash(
+  getTransfersEventByTxHashOrAddress(
     @Param('addressOrhash', AddressOrHashValidationPipe)
     addressOrhash: AddressOrHash,
     @Query('take', PaginationTakeValidationPipe) take?: number,
-    @Query('cursor') cursor?: string,
+    @Query('cursor', new CursorValidationPipe('eventId'))
+    cursor?: { eventId: string },
   ) {
     return this.eventsService.getTransfersEventByTxHashOrAddress(
       addressOrhash,
