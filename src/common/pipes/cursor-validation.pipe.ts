@@ -88,6 +88,18 @@ export class CursorValidationPipe implements PipeTransform {
         );
       }
 
+      if (parsedBlockNumber > MAX_INT_4_BYTES) {
+        throw new BadRequestException(
+          `blockNumber in cursor exceeds max allowed value: ${blockNumber}`,
+        );
+      }
+
+      if (parsedTransactionIndex > MAX_INT_4_BYTES) {
+        throw new BadRequestException(
+          `transactionIndex in cursor exceeds max allowed value: ${blockNumber}`,
+        );
+      }
+
       return {
         blockNumber: parsedBlockNumber,
         transactionIndex: parsedTransactionIndex,
