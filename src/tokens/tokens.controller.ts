@@ -3,7 +3,7 @@ import { TokensService } from './tokens.service';
 import { PaginationTakeValidationPipe } from 'src/common/pipes/pagination-take.pipe';
 import { CursorValidationPipe } from 'src/common/pipes/cursor-validation.pipe';
 import { AddressValidationPipe } from 'src/common/pipes/address-validation.pipe';
-import { GetTokenByNameOrSymbolParams } from './dto/get-token-by-name-or-symbol.dto';
+import { SearchValidationPipe } from 'src/common/pipes/search-validation.pipe';
 
 @Controller('tokens')
 export class TokensController {
@@ -28,7 +28,9 @@ export class TokensController {
   }
 
   @Get('/search/:value')
-  getTokenByNameOrSymbol(@Param() params: GetTokenByNameOrSymbolParams) {
-    return this.tokensService.getTokenByNameOrSymbol(params.value);
+  getTokenByNameOrSymbol(
+    @Param('value', new SearchValidationPipe(30)) value: string,
+  ) {
+    return this.tokensService.getTokenByNameOrSymbol(value);
   }
 }
