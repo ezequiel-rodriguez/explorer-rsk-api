@@ -11,7 +11,7 @@ export class TokensService {
     private tokenParser: TokenParserService,
   ) {}
 
-  async getTokens(take: number, cursor?: number) {
+  async getTokens(take: number, cursor?: { id: number }) {
     try {
       if (take < 0 && !cursor) {
         throw new BadRequestException(
@@ -34,7 +34,7 @@ export class TokensService {
 
       const response = await this.prisma.address.findMany({
         take: take > 0 ? take + 1 : take - 1,
-        cursor: cursor ? { id: cursor } : undefined,
+        cursor: cursor ? { id: cursor.id } : undefined,
         skip: cursor ? 1 : undefined,
         where,
         select: {
