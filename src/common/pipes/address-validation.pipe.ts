@@ -1,4 +1,5 @@
 import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
+import { isAddress } from '../utils/validation.utils';
 
 @Injectable()
 export class AddressValidationPipe implements PipeTransform {
@@ -7,11 +8,10 @@ export class AddressValidationPipe implements PipeTransform {
       throw new BadRequestException('Address should not be empty.');
     }
 
-    const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(value);
-    if (!isValidAddress) {
+    if (!isAddress(value)) {
       throw new BadRequestException(`Invalid address format: ${value}`);
     }
 
-    return value.toLowerCase(); // Normalize to lowercase if needed
+    return value.toLowerCase();
   }
 }

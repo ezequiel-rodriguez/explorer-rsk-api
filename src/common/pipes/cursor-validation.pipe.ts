@@ -1,5 +1,10 @@
 import { PipeTransform, BadRequestException, Injectable } from '@nestjs/common';
-import { MAX_INT_4_BYTES } from '../constants';
+import {
+  isAddress,
+  isBlockNumber,
+  isHex32,
+  isTransactionIndex,
+} from '../utils/validation.utils';
 
 @Injectable()
 export class CursorValidationPipe implements PipeTransform {
@@ -36,30 +41,22 @@ export class CursorValidationPipe implements PipeTransform {
       }
 
       const [entity, blockNumber] = parts;
-      const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(entity);
-      const parsedBlockNumber = parseInt(blockNumber, 10);
 
-      if (!isValidAddress) {
+      if (!isAddress(entity)) {
         throw new BadRequestException(
           `Invalid address format in cursor: ${entity}`,
         );
       }
 
-      if (isNaN(parsedBlockNumber) || parsedBlockNumber < 0) {
+      if (!isBlockNumber(blockNumber)) {
         throw new BadRequestException(
           `Invalid blockNumber in cursor: ${blockNumber}`,
         );
       }
 
-      if (parsedBlockNumber > MAX_INT_4_BYTES) {
-        throw new BadRequestException(
-          `blockNumber in cursor exceeds max allowed value: ${blockNumber}`,
-        );
-      }
-
       return {
         [entityName]: entity,
-        blockNumber: parsedBlockNumber,
+        blockNumber: parseInt(blockNumber, 10),
       };
     }
 
@@ -73,61 +70,34 @@ export class CursorValidationPipe implements PipeTransform {
 
       const [blockNumber, transactionIndex] = parts;
 
-      const parsedBlockNumber = parseInt(blockNumber, 10);
-      const parsedTransactionIndex = parseInt(transactionIndex, 10);
-
-      if (isNaN(parsedBlockNumber) || parsedBlockNumber < 0) {
+      if (!isBlockNumber(blockNumber)) {
         throw new BadRequestException(
           `Invalid blockNumber in cursor: ${blockNumber}`,
         );
       }
 
-      if (isNaN(parsedTransactionIndex) || parsedTransactionIndex < 0) {
+      if (!isTransactionIndex(transactionIndex)) {
         throw new BadRequestException(
           `Invalid transactionIndex in cursor: ${transactionIndex}`,
         );
       }
 
-      if (parsedBlockNumber > MAX_INT_4_BYTES) {
-        throw new BadRequestException(
-          `blockNumber in cursor exceeds max allowed value: ${blockNumber}`,
-        );
-      }
-
-      if (parsedTransactionIndex > MAX_INT_4_BYTES) {
-        throw new BadRequestException(
-          `transactionIndex in cursor exceeds max allowed value: ${blockNumber}`,
-        );
-      }
-
       return {
-        blockNumber: parsedBlockNumber,
-        transactionIndex: parsedTransactionIndex,
+        blockNumber: parseInt(blockNumber, 10),
+        transactionIndex: parseInt(transactionIndex, 10),
       };
     }
 
     if (this.expectedFormat === 'number') {
       if (!value) return undefined;
 
-      const numericValue = parseInt(value, 10);
-
-      if (isNaN(numericValue)) {
-        throw new BadRequestException(`"cursor" must be an integer.`);
-      }
-
-      if (numericValue < 0) {
+      if (!isBlockNumber(value)) {
         throw new BadRequestException(
-          `"cursor" must be a non-negative integer.`,
+          `Invalid cursor: "${value}" must an integer greater or equal than 0.`,
         );
       }
 
-      if (numericValue > MAX_INT_4_BYTES) {
-        throw new BadRequestException(
-          `blockNumber in cursor exceeds max allowed value: ${numericValue}`,
-        );
-      }
-
-      return { id: numericValue };
+      return { id: parseInt(value, 10) };
     }
 
     if (
@@ -137,7 +107,7 @@ export class CursorValidationPipe implements PipeTransform {
     ) {
       if (!value) return undefined;
 
-      if (!/^[a-fA-F0-9]{32}$/.test(value)) {
+      if (!isHex32(value)) {
         throw new BadRequestException(
           `Invalid cursor: "${value}" must be a 32-character hexadecimal string.`,
         );
@@ -156,7 +126,7 @@ export class CursorValidationPipe implements PipeTransform {
 
       const [internalTxId, role] = parts;
 
-      if (!/^[a-fA-F0-9]{32}$/.test(internalTxId)) {
+      if (!isHex32(internalTxId)) {
         throw new BadRequestException(
           `Invalid internalTxId format in cursor: ${internalTxId}`,
         );

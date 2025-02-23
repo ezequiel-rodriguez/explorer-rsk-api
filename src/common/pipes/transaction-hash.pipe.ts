@@ -1,4 +1,5 @@
 import { PipeTransform, BadRequestException, Injectable } from '@nestjs/common';
+import { isTransactionHash } from '../utils/validation.utils';
 
 @Injectable()
 export class TransactionHashValidationPipe implements PipeTransform {
@@ -7,9 +8,7 @@ export class TransactionHashValidationPipe implements PipeTransform {
       return undefined;
     }
 
-    const isHash = /^0x[a-fA-F0-9]{64}$/.test(value);
-
-    if (!isHash) {
+    if (!isTransactionHash(value)) {
       throw new BadRequestException(
         `Invalid input: "${value}". Must be a valid a 64-character hash.`,
       );

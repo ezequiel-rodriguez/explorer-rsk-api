@@ -1,4 +1,5 @@
 import { PipeTransform, BadRequestException, Injectable } from '@nestjs/common';
+import { isHex32 } from '../utils/validation.utils';
 
 @Injectable()
 export class IdValidationPipe implements PipeTransform {
@@ -11,7 +12,7 @@ export class IdValidationPipe implements PipeTransform {
       return undefined;
     }
 
-    if (!/^[a-fA-F0-9]{32}$/.test(value)) {
+    if (!isHex32(value)) {
       throw new BadRequestException(
         `Invalid ${this.fieldName}: "${value}". It must be a 32-character hexadecimal string.`,
       );
