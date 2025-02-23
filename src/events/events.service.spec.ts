@@ -207,8 +207,8 @@ describe('EventsService', () => {
       take: 2,
       hasMoreData: false,
     });
-    expect(result.data[0].contrant_detail.name).toBe('Token');
-    expect(result.data[0].contrant_detail.symbol).toBe('TKN');
+    expect(result.data[0].contract_detail.name).toBe('Token');
+    expect(result.data[0].contract_detail.symbol).toBe('TKN');
   });
 
   it('should return transfer events with pagination and cursor', async () => {
@@ -310,8 +310,8 @@ describe('EventsService', () => {
       take: 2,
       hasMoreData: false,
     });
-    expect(result.data[0].contrant_detail.name).toBe('Token');
-    expect(result.data[0].contrant_detail.symbol).toBe('TKN');
+    expect(result.data[0].contract_detail.name).toBe('Token');
+    expect(result.data[0].contract_detail.symbol).toBe('TKN');
   });
 
   it('should throw an error when Prisma query fails', async () => {
@@ -375,8 +375,8 @@ describe('EventsService', () => {
     expect(result.data.transaction.receipt.logs[0].eventId).toBe(
       '02c9f0e00300545ccbc4385f86af73db',
     );
-    expect(result.data.contrant_detail.name).toBe('IToken');
-    expect(result.data.contrant_detail.symbol).toBe('ITK');
+    expect(result.data.contract_detail.name).toBe('IToken');
+    expect(result.data.contract_detail.symbol).toBe('ITK');
   });
 
   it('Should return null response if event does not exist', async () => {

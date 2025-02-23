@@ -74,7 +74,7 @@ describe('EventParserService', () => {
             ],
           },
         },
-        contrant_detail: {
+        contract_detail: {
           name: 'IToken',
           symbol: 'ITK',
         },
@@ -113,7 +113,7 @@ describe('EventParserService', () => {
           timestamp: '1655296889',
           args: [0, 1, '0x3e252e0'],
           totalSupply: new BigNumber('0x3e252e0').dividedBy(1e18).toNumber(),
-          contrant_detail: {
+          contract_detail: {
             name: 'Transfer Event',
             symbol: 'TRF',
           },
@@ -123,7 +123,7 @@ describe('EventParserService', () => {
           timestamp: '1655296889',
           args: [0, 1, '0x3e252e0'],
           totalSupply: new BigNumber('0x3e252e0').dividedBy(1e18).toNumber(),
-          contrant_detail: {
+          contract_detail: {
             name: 'Transfer Event 2',
             symbol: 'TRF2',
           },
