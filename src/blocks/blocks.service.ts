@@ -53,12 +53,7 @@ export class BlocksService {
 
       if (blocks.length === 0) {
         return {
-          paginationData: {
-            nextCursor: null,
-            prevCursor: cursor || null,
-            take,
-          },
-          data: [],
+          data: null,
         };
       }
 

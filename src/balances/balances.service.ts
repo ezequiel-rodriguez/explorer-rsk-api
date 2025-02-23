@@ -39,15 +39,9 @@ export class BalancesService {
         },
       });
 
-      if (response.length <= 0) {
+      if (response.length === 0) {
         return {
-          paginationBalances: {
-            nextCursor: null,
-            prevCursor: cursor || null,
-            take,
-            hasMoreData: false,
-          },
-          data: [],
+          data: null,
         };
       }
 
@@ -77,7 +71,7 @@ export class BalancesService {
         !cursor || (take < 0 && !hasMoreData) ? null : formattedData[0]?.id;
 
       return {
-        paginationBalances: {
+        paginationData: {
           nextCursor,
           prevCursor,
           take,

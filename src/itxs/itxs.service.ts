@@ -102,8 +102,7 @@ export class ItxsService {
 
       if (transactions.length === 0) {
         return {
-          paginationData: { nextCursor: null, prevCursor: null, take },
-          data: [],
+          data: null,
         };
       }
 
@@ -171,8 +170,7 @@ export class ItxsService {
 
       if (internalTransactions.length === 0) {
         return {
-          paginationData: { nextCursor: null, prevCursor: null, take },
-          data: [],
+          data: null,
         };
       }
 
@@ -267,8 +265,7 @@ export class ItxsService {
 
       if (internalTransactions.length === 0) {
         return {
-          paginationData: { nextCursor: null, prevCursor: null, take },
-          data: [],
+          data: null,
         };
       }
 
