@@ -23,7 +23,7 @@ export class AddressesService {
    * @param {number} take - Number of records per page. Negative values return the previous page.
    * @returns {Promise<{ pagination: any, data: any }>} - Paginated list of addresses.
    */
-  async getAddresses(take: number, cursor?: number) {
+  async getAddresses(take: number, cursor?: { id: number }) {
     try {
       if (take < 0 && !cursor) {
         throw new BadRequestException(
@@ -33,7 +33,7 @@ export class AddressesService {
 
       const addresses = await this.prisma.address.findMany({
         take: take > 0 ? take + 1 : take - 1,
-        cursor: cursor ? { id: cursor } : undefined,
+        cursor: cursor ? { id: cursor.id } : undefined,
         skip: cursor ? 1 : undefined,
         include: {
           address_latest_balance_address_latest_balance_addressToaddress: {
@@ -48,12 +48,7 @@ export class AddressesService {
 
       if (addresses.length === 0) {
         return {
-          paginationData: {
-            nextCursor: null,
-            prevCursor: null,
-            take,
-          },
-          data: [],
+          data: null,
         };
       }
 

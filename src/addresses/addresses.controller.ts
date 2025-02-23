@@ -1,8 +1,8 @@
 import { Controller, Get, Param, Query, Logger } from '@nestjs/common';
 import { AddressesService } from './addresses.service';
 import { PaginationTakeValidationPipe } from 'src/common/pipes/pagination-take.pipe';
-import { PaginationCursorValidationPipe } from 'src/common/pipes/pagination-cursor.pipe';
 import { AddressValidationPipe } from 'src/common/pipes/address-validation.pipe';
+import { CursorValidationPipe } from 'src/common/pipes/cursor-validation.pipe';
 
 @Controller('addresses')
 export class AddressesController {
@@ -20,7 +20,8 @@ export class AddressesController {
   @Get()
   getAllAddresses(
     @Query('take', PaginationTakeValidationPipe) take?: number,
-    @Query('cursor', PaginationCursorValidationPipe) cursor?: number,
+    @Query('cursor', new CursorValidationPipe('number'))
+    cursor?: { id: number },
   ) {
     return this.addressService.getAddresses(take, cursor);
   }

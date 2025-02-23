@@ -6,7 +6,8 @@ export class CursorValidationPipe implements PipeTransform {
   constructor(
     private expectedFormat:
       | 'address_blockNumber'
-      | 'blockNumber_transactionIndex',
+      | 'blockNumber_transactionIndex'
+      | 'number',
   ) {}
 
   transform(value: string): { [key: string]: string | number } {
@@ -80,6 +81,24 @@ export class CursorValidationPipe implements PipeTransform {
         blockNumber: parsedBlockNumber,
         transactionIndex: parsedTransactionIndex,
       };
+    }
+
+    if (this.expectedFormat === 'number') {
+      if (!value) return undefined;
+
+      const numericValue = parseInt(value, 10);
+
+      if (isNaN(numericValue)) {
+        throw new BadRequestException(`"cursor" must be an integer.`);
+      }
+
+      if (numericValue < 0) {
+        throw new BadRequestException(
+          `"cursor" must be a non-negative integer.`,
+        );
+      }
+
+      return { id: numericValue };
     }
 
     throw new BadRequestException(
