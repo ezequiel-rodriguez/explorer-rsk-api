@@ -22,24 +22,29 @@ export class CursorValidationPipe implements PipeTransform {
 
     let parts: string[];
 
-    if (this.expectedFormat === 'address_blockNumber') {
+    if (
+      this.expectedFormat === 'address_blockNumber' ||
+      this.expectedFormat === 'contract_blockNumber'
+    ) {
       parts = value.split('_');
+      const entityName = this.expectedFormat.split('_')[0];
 
       if (parts.length !== 2) {
         throw new BadRequestException(
-          `Invalid cursor format. Expected format: "address_blockNumber". Received: "${value}".`,
+          `Invalid cursor format. Expected format: "${this.expectedFormat}". Received: "${value}".`,
         );
       }
 
-      const [address, blockNumber] = parts;
-
-      if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-        throw new BadRequestException(
-          `Invalid address format in cursor: ${address}`,
-        );
-      }
-
+      const [entity, blockNumber] = parts;
+      const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(entity);
       const parsedBlockNumber = parseInt(blockNumber, 10);
+
+      if (!isValidAddress) {
+        throw new BadRequestException(
+          `Invalid address format in cursor: ${entity}`,
+        );
+      }
+
       if (isNaN(parsedBlockNumber) || parsedBlockNumber < 0) {
         throw new BadRequestException(
           `Invalid blockNumber in cursor: ${blockNumber}`,
@@ -52,40 +57,10 @@ export class CursorValidationPipe implements PipeTransform {
         );
       }
 
-      return { address, blockNumber: parsedBlockNumber };
-    }
-
-    if (this.expectedFormat === 'contract_blockNumber') {
-      parts = value.split('_');
-
-      if (parts.length !== 2) {
-        throw new BadRequestException(
-          `Invalid cursor format. Expected format: "contract_blockNumber". Received: "${value}".`,
-        );
-      }
-
-      const [contract, blockNumber] = parts;
-
-      if (!/^0x[a-fA-F0-9]{40}$/.test(contract)) {
-        throw new BadRequestException(
-          `Invalid contract format in cursor: ${contract}`,
-        );
-      }
-
-      const parsedBlockNumber = parseInt(blockNumber, 10);
-      if (isNaN(parsedBlockNumber) || parsedBlockNumber < 0) {
-        throw new BadRequestException(
-          `Invalid blockNumber in cursor: ${blockNumber}`,
-        );
-      }
-
-      if (parsedBlockNumber > MAX_INT_4_BYTES) {
-        throw new BadRequestException(
-          `blockNumber in cursor exceeds max allowed value: ${blockNumber}`,
-        );
-      }
-
-      return { contract, blockNumber: parsedBlockNumber };
+      return {
+        [entityName]: entity,
+        blockNumber: parsedBlockNumber,
+      };
     }
 
     if (this.expectedFormat === 'blockNumber_transactionIndex') {
