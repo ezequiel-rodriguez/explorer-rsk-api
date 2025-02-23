@@ -249,6 +249,12 @@ export class TokensService {
         },
       });
 
+      if (!response.length) {
+        return {
+          data: null,
+        };
+      }
+
       const formatData = response.map((t) => {
         return {
           address: t.address,
