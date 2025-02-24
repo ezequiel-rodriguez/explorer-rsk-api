@@ -80,17 +80,22 @@ describe('EventsService', () => {
     const result = await service.getEventsByAddress(
       '0x6306395B37120b1114EF08ee160f7C2f3a263558',
       2,
+      { eventId: 'event1' }
     );
 
-    expect(result.paginationEvents).toEqual({
+    expect(result.paginationData).toEqual({
       nextCursor: null,
-      prevCursor: null,
+      prevCursor: 'event1',
       take: 2,
       hasMoreData: false,
     });
     expect(result.data.length).toBe(2);
     expect(prismaMock.event.findMany).toHaveBeenCalledWith({
       take: 3,
+      skip: 1,
+      cursor: {
+        eventId: "event1",
+      },
       where: {
         address_in_event: {
           some: { address: '0x6306395B37120b1114EF08ee160f7C2f3a263558' },
@@ -111,6 +116,7 @@ describe('EventsService', () => {
     const result = await service.getEventsByAddress(
       '0x6306395B37120b1114EF08ee160f7C2f3a263558',
       2,
+      { eventId: 'event51' }
     );
 
     expect(result).toEqual({
@@ -120,7 +126,7 @@ describe('EventsService', () => {
         take: 2,
         hasMoreData: false,
       },
-      data: [],
+      data: null,
     });
   });
 
@@ -151,10 +157,10 @@ describe('EventsService', () => {
     const result = await service.getEventsByAddress(
       '0x6306395B37120b1114EF08ee160f7C2f3a263558',
       2,
-      'event51',
+      { eventId: 'event51' },
     );
 
-    expect(result.paginationEvents).toEqual({
+    expect(result.paginationData).toEqual({
       nextCursor: null,
       prevCursor: 'event50',
       take: 2,
@@ -171,6 +177,7 @@ describe('EventsService', () => {
       service.getEventsByAddress(
         '0x6306395B37120b1114EF08ee160f7C2f3a263558',
         2,
+        { eventId: 'event51'}
       ),
     ).rejects.toThrow('Failed to fetch events: Database error');
   });
@@ -201,14 +208,14 @@ describe('EventsService', () => {
       2,
     );
 
-    expect(result.paginationEvents).toEqual({
+    expect(result.paginationData).toEqual({
       nextCursor: null,
       prevCursor: null,
       take: 2,
       hasMoreData: false,
     });
-    expect(result.data[0].contrant_detail.name).toBe('Token');
-    expect(result.data[0].contrant_detail.symbol).toBe('TKN');
+    expect(result.data[0].contract_detail.name).toBe('Token');
+    expect(result.data[0].contract_detail.symbol).toBe('TKN');
   });
 
   it('should return transfer events with pagination and cursor', async () => {
@@ -244,10 +251,10 @@ describe('EventsService', () => {
           '0x00ca0f23e0b034b0ca0b6ba31530b5e86e6c499985d88cadc6d7d24be5bca35b',
       },
       2,
-      'event51',
+      { eventId: 'event51' },
     );
 
-    expect(result.paginationEvents).toEqual({
+    expect(result.paginationData).toEqual({
       nextCursor: null,
       prevCursor: 'event50',
       take: 2,
@@ -275,7 +282,7 @@ describe('EventsService', () => {
         take: 2,
         hasMoreData: false,
       },
-      data: [],
+      data: null,
     });
   });
 
@@ -304,14 +311,14 @@ describe('EventsService', () => {
       2,
     );
 
-    expect(result.paginationEvents).toEqual({
+    expect(result.paginationData).toEqual({
       nextCursor: null,
       prevCursor: null,
       take: 2,
       hasMoreData: false,
     });
-    expect(result.data[0].contrant_detail.name).toBe('Token');
-    expect(result.data[0].contrant_detail.symbol).toBe('TKN');
+    expect(result.data[0].contract_detail.name).toBe('Token');
+    expect(result.data[0].contract_detail.symbol).toBe('TKN');
   });
 
   it('should throw an error when Prisma query fails', async () => {
@@ -375,8 +382,8 @@ describe('EventsService', () => {
     expect(result.data.transaction.receipt.logs[0].eventId).toBe(
       '02c9f0e00300545ccbc4385f86af73db',
     );
-    expect(result.data.contrant_detail.name).toBe('IToken');
-    expect(result.data.contrant_detail.symbol).toBe('ITK');
+    expect(result.data.contract_detail.name).toBe('IToken');
+    expect(result.data.contract_detail.symbol).toBe('ITK');
   });
 
   it('Should return null response if event does not exist', async () => {

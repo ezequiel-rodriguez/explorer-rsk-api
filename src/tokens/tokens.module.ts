@@ -5,7 +5,12 @@ import { PrismaService } from 'src/prisma.service';
 import { TokenParserService } from 'src/common/parsers/token-parser.service';
 
 @Module({
-  providers: [TokensService, PrismaService, TokenParserService],
+  providers: [
+    TokensService,
+    PrismaService,
+    TokenParserService,
+    TokenParserService,
+  ],
   controllers: [TokensController],
 })
 export class TokensModule {}

@@ -16,6 +16,7 @@ export class TxParserService {
         .toString();
       const receipt = JSON.parse(tx.receipt);
       tx.receipt = receipt;
+      tx.to = tx.to || receipt.contractAddress;
       const status = Number(receipt.status)
         ? TX_STATUS.SUCCESS
         : TX_STATUS.FAIL;
@@ -58,6 +59,10 @@ export class TxParserService {
         .toNumber()
         .toString();
       tx.action = action;
+      const result = JSON.parse(tx?.result) || {};
+      tx.result = result;
+      tx.action.to = tx.action.to || result?.address;
+
       return tx;
     });
     return formatData;

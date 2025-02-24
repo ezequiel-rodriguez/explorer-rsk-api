@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { TAKE_PAGE_DATA } from 'src/common/constants';
-import BigNumber from 'bignumber.js';
 import { TokenParserService } from 'src/common/parsers/token-parser.service';
 import { PrismaService } from 'src/prisma.service';
 
@@ -127,6 +126,12 @@ export class TokensService {
           contract_token_address_contractTocontract: {
             select: {
               name: true,
+              contract_contract_addressToaddress: {
+                select: {
+                  symbol: true,
+                  contract_interface: true,
+                },
+              },
             },
           },
           contract_details: {
@@ -148,25 +153,8 @@ export class TokensService {
           : tokensWithDetails.slice(1)
         : tokensWithDetails;
 
-      const formattedData = paginatedResults.map((token) => ({
-        address: token.address,
-        contract: token.contract,
-        blockNumber: token.blockNumber,
-        blockHash: token.blockHash,
-        balance: token.balance
-          ? new BigNumber(token.balance)
-              .dividedBy(10 ** (token.contract_details?.decimals || 18))
-              .toString()
-          : '0',
-        name:
-          token.contract_token_address_contractTocontract?.name ||
-          '(Not provided)',
-        symbol: token.contract_details?.symbol || '(Not provided)',
-        decimals: token.contract_details?.decimals || 18,
-        contract_interface: token.contract_details?.contract_interface.map(
-          (i) => i.interface,
-        ),
-      }));
+      const formattedData =
+        this.tokenParser.formatTokensByAddress(paginatedResults);
 
       const nextCursor =
         take > 0 && !hasMoreData

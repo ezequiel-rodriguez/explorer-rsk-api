@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { EventParserService } from 'src/events/parser/event-parser.service';
 import { AddressOrHash } from 'src/common/pipes/address-or-hash-validation.pipe';
 import { PrismaService } from 'src/prisma.service';
@@ -103,6 +104,12 @@ export class EventsService {
 
       if (response.length === 0) {
         return {
+          paginationEvents: {
+            nextCursor: null,
+            prevCursor: null,
+            take: 2,
+            hasMoreData: false,
+          },
           data: null,
         };
       }
@@ -176,36 +183,40 @@ export class EventsService {
         );
       }
 
-      const where = {
+      let where: Prisma.eventWhereInput = {
         event: 'Transfer',
-        [addressOrhash.type]: addressOrhash.value,
       };
 
-      const response = await this.prisma.event.findMany({
-        take: take > 0 ? take + 1 : take - 1,
-        cursor: cursor ? { eventId: cursor.eventId } : undefined,
-        skip: cursor ? 1 : undefined,
-        where,
-        include: {
-          address_event_addressToaddress: {
-            select: {
-              name: true,
-              contract_contract_addressToaddress: {
-                select: {
-                  symbol: true,
-                  contract_interface: true,
-                },
-              },
+      if (addressOrhash.type === 'address') {
+        where.OR = [
+          {
+            transaction: {
+              from: addressOrhash.value,
             },
           },
-        },
-        orderBy: {
-          eventId: 'desc',
-        },
-      });
+        ];
+      } else {
+        where.transactionHash = addressOrhash.value;
+      }
+
+      let response = await this.findTokensTransferEvents(where, take, cursor);
+
+      if (response.length === 0 && addressOrhash.type === 'address') {
+        where = {
+          event: 'Transfer',
+          address: addressOrhash.value,
+        };
+        response = await this.findTokensTransferEvents(where, take, cursor);
+      }
 
       if (response.length === 0) {
         return {
+          paginationEvents: {
+            nextCursor: null,
+            prevCursor: null,
+            take: 2,
+            hasMoreData: false,
+          },
           data: null,
         };
       }
@@ -246,5 +257,34 @@ export class EventsService {
       }
       throw new Error(`Failed to fetch events: ${error.message}`);
     }
+  }
+
+  findTokensTransferEvents(
+    where: Prisma.eventWhereInput,
+    take: number,
+    cursor?: { eventId: string },
+  ) {
+    return this.prisma.event.findMany({
+      take: take > 0 ? take + 1 : take - 1,
+      cursor: cursor ? { eventId: cursor.eventId } : undefined,
+      skip: cursor ? 1 : undefined,
+      where,
+      include: {
+        address_event_addressToaddress: {
+          select: {
+            name: true,
+            contract_contract_addressToaddress: {
+              select: {
+                symbol: true,
+                contract_interface: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        eventId: 'desc',
+      },
+    });
   }
 }
