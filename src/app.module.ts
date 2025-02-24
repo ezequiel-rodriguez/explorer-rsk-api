@@ -10,6 +10,7 @@ import { PaginationModule } from './common/pagination/pagination.module';
 import { ItxsModule } from './itxs/itxs.module';
 import { StatsModule } from './stats/stats.module';
 import { EventsModule } from './events/events.module';
+import { VerificationsModule } from './verifications/verifications.module';
 import { BalancesModule } from './balances/balances.module';
 import { AccountsModule } from './accounts/accounts.module';
 
@@ -23,6 +24,7 @@ import { AccountsModule } from './accounts/accounts.module';
     ItxsModule,
     StatsModule,
     EventsModule,
+    VerificationsModule,
     BalancesModule,
     AccountsModule,
   ],
